@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Change Algorithm Simulation</title>
+</head>
+<style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+        }
+
+        table {
+            border-collapse: separate;
+            margin: 20px auto;
+        }
+
+        table, th, td {
+            border: 5px solid rgba(0, 0, 0, 0);
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            transition: background-color 0.5s;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        #output {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #explain {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+
+
+
+
+
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            color: #333;
+            padding: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+            color: #555;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px 0;
+            width: 200px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #output, #explain {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        table {
+            /* border-collapse: collapse; */
+            margin: 20px auto;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+       
+        th {
+            background-color: #f2f2f2;
+        }
+
+        #table-container {
+            overflow-x: auto;
+        }
+
+
+  
+</style>
+<body>
+    <h1>Coin Change Algorithm Simulation</h1>
+    <label for="amount" >Enter amount:</label>
+    <input type="number" id="amount" placeholder="Enter amount"  required/>
+    <br>
+    <label for="coins">Enter coin denominations (space separated):</label>
+    <input type="text" id="coins" placeholder="Enter coin denominations" required/>
+    <br>
+    <button onclick="runSimulation()">Show Dynamic</button>
+    <button onclick="runGreedy()">Show Greedy</button>
+    <div id="output"></div>
+    <div id="table-container"></div>
+    <div id="explain"></div>
+
+</body>
+<script>
+  
+  let simulationRunning = false;
+      
+      function runSimulation() {
+        if(simulationRunning){
+          // window.alert('Simulation already running. Please wait or end the Simulation.');
+          return;
+        }
+
+        simulationRunning = true;
+
+        const amount = parseInt(document.getElementById('amount').value);
+        const coinsInput = document.getElementById('coins').value;
+        const coins = coinsInput.split(' ').map(coin => parseInt(coin));
+        // const amount = 9
+        // const coins = [1,4,5,7]
+        // console.log(coins.length);
+        
+        // console.log(coins)
+        
+        const { result, table  } = coinChangeDynamic(amount, coins);
+        // console.log(table[2][3])
+        
+        let step = displaySimulationDynamic(result, table );
+        const coinsUsed = findCoinsUsed(table);
+        // console.log(coinsUsed);
+        // let step=0;
+
+        setTimeout(()=>{
+          simulationRunning = displayBacktracking(coinsUsed, table, result, step+1);          
+        },step*1000)
+      }    
+     
+      function coinChangeDynamic(amount, coins) {
+        const dp = Array(amount + 1).fill(Infinity);
+        dp[0] = 0;
+        
+        const table = [];
+        const amt = [];
+        for (let i = 0; i <= amount; i++){
+          amt.push(i);
+        }
+        table.push(amt);
+        for (const coin of coins) {
+          const row = [coin];
+          for (let i = 1; i <= amount; i++) {
+            const withoutCoin = dp[i];
+            const withCoin = i >= coin ? dp[i - coin] + 1 : Infinity;
+            
+            dp[i] = Math.min(withoutCoin, withCoin);
+            row.push(dp[i]);
+          }
+          table.push(row);    
+        }
+        
+        return { result: dp[amount] === Infinity ? -1 : dp[amount], table };
+      }
+       
+      function displaySimulationDynamic(result, table) {
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = '';
+
+        const explainDiv = document.getElementById('explain');
+        explainDiv.innerHTML = '';
+        
+        const tableContainer = document.getElementById('table-container');
+        tableContainer.innerHTML = '';
+        
+        if (result === -1) {
+          outputDiv.innerHTML = 'No valid combination.';
+          return;
+        }
+        
+        // Display the entire table immediately
+        // displayTable(tableContainer, table, table.length - 1, table[0].length - 1);
+        
+        let step = 0;
+        for (let i = 1; i < table.length; i++) {
+          for (let j = 1; j < table[0].length; j++) {
+            setTimeout(() => {
+              //first row
+              if (i==1){      
+                outputDiv.innerHTML = `Calculating number of coins for sum ${j} using denomination '${table[i][0]}'.` ;  
+                explainDiv.innerHTML = `No. of denomination '${table[i][0]}' coins required for Sum ${j}`;
+              } 
+              //Copying from above
+              else if (j<table[i][0]){    
+                outputDiv.innerHTML = `Calculating number of coins for sum ${j}, denomination '${table[i][0]}' can be used with above denomination(s)` ;
+                explainDiv.innerHTML = `Denomination greater than sum, take above value`;
+              } 
+              //sum equal to coin
+              else if (j==table[i][0]){     
+                outputDiv.innerHTML = `Calculating number of coins for sum ${j}, denomination '${table[i][0]}' can be used with above denomination(s)` ;
+                explainDiv.innerHTML = `Only 1 coin required.`;
+              } 
+              else{
+                outputDiv.innerHTML = `Calculating number of coins for sum ${j}, denomination '${table[i][0]}' can be used with above denomination(s)` ;
+                explainDiv.innerHTML = `Min(dp[row-1], dp[sum - coin] + 1 ) = ${table[i][j]}`;
+              } 
+              displayTableSim(tableContainer, table, i, j,step);
+            }, step * 1000);
+            step+=1;
+          }
+        }
+        return step;
+      }
+      
+      function displayTableSim(container, data, highlightRow, highlightColumn, step) {
+        step*=10;
+        const table = document.createElement('table');
+        const header = table.createTHead();
+        const body = table.createTBody();
+        
+        // Create header row
+        const headerRow = header.insertRow();
+        headerRow.insertCell().textContent = 'Coins';
+
+        for (let i = 1; i < data[0].length; i++) {
+          headerRow.insertCell().textContent = `Sum ${i}`;
+        }
+
+        // Create data rows
+        for (let j = 1; j < data.length; j++) {
+          const dataRow = body.insertRow();
+          for (let k = 0; k < data[j].length; k++) {
+            const cellElement = dataRow.insertCell();
+            
+            //highlight border
+
+            //on that cell
+            if (j === highlightRow && k === highlightColumn) cellElement.style.borderColor = '#f20000' ;
+            //one coin required
+            else if(j === highlightRow && k === highlightColumn && data[j][k]==1) cellElement.style.borderColor = '#f20000' ;
+            //copying from above
+            else if(j === highlightRow - 1 && k === highlightColumn && data[highlightRow][0] > data[0][k]) {
+              cellElement.style.borderColor = '#f20000';
+              setTimeout(()=>{
+                cellElement.style.borderColor = 'rgba(0, 0, 0, 0)';
+              },step)
+            }
+            //comparing two values
+            //upper value
+            else if(j===highlightRow-1 && k===highlightColumn && data[highlightRow][k]!=1){
+              cellElement.style.borderColor = '#f20000' ;
+              setTimeout(()=>{
+                cellElement.style.borderColor = 'rgba(0, 0, 0, 0)';
+              },step)
+            }
+            //lower value
+            else if(j===highlightRow && k==(data[0][highlightColumn]-data[j][0]) && j!=1 && k !=0){
+              cellElement.style.borderColor = '#f20000' ;
+              setTimeout(()=>{
+                cellElement.style.borderColor = 'rgba(0, 0, 0, 0)';
+              },step)
+            }
+            
+            //values display
+
+            const value = data[j][k] === Infinity ? '-' : data[j][k];
+
+            //first column
+            if(k==0) cellElement.textContent = value; 
+            //previuos row
+            else if(j < highlightRow) cellElement.textContent = value; 
+            //previous values, same row
+            else if(j === highlightRow && k < highlightColumn) cellElement.textContent = value; 
+            //rest hidden
+            else if(j != highlightRow || k != highlightColumn) cellElement.textContent = '';
+            setTimeout(()=>{
+              if(j === highlightRow && k === highlightColumn) cellElement.textContent = value; 
+            },step)
+          }
+        }
+
+        container.innerHTML = '';
+        container.appendChild(table)
+      }
+    
+      function findCoinsUsed(table){
+
+        let i = table.length-1;
+        let j = table[0].length-1;
+        
+        const coinsUsed = [];
+        
+        while(j!=0){
+          while(table[i][j]==table[i-1][j]){
+            i--;
+          } 
+          coinsUsed.push(table[i][0]);
+          // console.log(coinsUsed);
+          j -= table[i][0];
+        }
+        // console.log(coinsUsed.includes(5));
+        return coinsUsed;
+      }
+
+      function displayTableBack(coinIndex, container, data, highlightRow, highlightColumn){
+      
+      
+     
+        // step*=10;
+        const table = document.createElement('table');
+        const header = table.createTHead();
+        const body = table.createTBody();
+        
+        // Create header row
+        const headerRow = header.insertRow();
+        headerRow.insertCell().textContent = 'Coins';
+
+        for (let i = 1; i < data[0].length; i++) {
+          headerRow.insertCell().textContent = `Sum ${i}`;
+        }
+
+        // Create data rows
+        for (let j = 1; j < data.length; j++) {
+          const dataRow = body.insertRow();
+          for (let k = 0; k < data[j].length; k++) {
+            const cellElement = dataRow.insertCell();
+            
+            //highlight border
+            //on that cell
+            if(highlightColumn === k && k === 0 && coinIndex.includes(j) ) cellElement.style.borderColor = '#f20000' ;
+            else if (j === highlightRow && k === highlightColumn) cellElement.style.borderColor = '#f20000' ;
+            //above cell
+            else if(j === highlightRow-1 && k === highlightColumn && k!=0) cellElement.style.borderColor = '#f20000' ;
+            //this coin was used
+            else if( j === highlightRow && k===0 && data[highlightRow][highlightColumn]!=data[highlightRow-1][highlightColumn]) cellElement.style.borderColor = '#f20000' ;
+            // console.log(highlightColumn);
+            //values display
+            const value = data[j][k] === Infinity ? '-' : data[j][k];
+            cellElement.textContent = value; 
+            
+          }
+        }
+
+        container.innerHTML = '';
+        container.appendChild(table)
+      }
+
+      function displayBacktracking(coinsUsed, table, result, step) {
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = 'Backtracking';
+
+        const explainDiv = document.getElementById('explain');
+        explainDiv.innerHTML = 'Finding which coins were used';
+
+        const tableContainer = document.getElementById('table-container');
+        let i = table.length - 1;
+        let j = table[0].length - 1;
+        let currentStep = 0;
+
+        const coinIndex = [];
+        for(let i = 0;i<table.length;i++){
+          if (coinsUsed.includes(table[i][0])) coinIndex.push(i);
+        }
+        // console.log(coinIndex);
+        const interval = setInterval(() => {
+            displayTableBack(coinIndex, tableContainer, table, i, j);
+            if (i === 0 || j === 0) {
+              outputDiv.innerHTML = `Therefore, ${table[table.length-1][table[0].length-1]} coins have been used.`;
+              explainDiv.innerHTML = `Combination of coins is (${coinsUsed.reverse()}).`;
+              console.log('Dynamic simulation complete.');
+              displayTableBack(coinIndex, tableContainer, table, i, j);             
+              clearInterval(interval);
+              return false;
+            } 
+            else {
+                if (table[i][j] === table[i - 1][j]) {
+                    i--;
+                    outputDiv.innerHTML = `Sum remaining =  ${j}.`;
+                    explainDiv.innerHTML = `Upper value is same, move up.`;
+                } 
+                else {
+                    // coinsUsed.push(table[i][0]);
+                    j -= table[i][0];
+                    outputDiv.innerHTML = `Sum remaining = Sum - Coin = ${j}.`;
+                    explainDiv.innerHTML = `No. of coins decreased when coin ${table[i][0]} was used, add it in solution.`;
+                }   
+            }
+        }, step * 30);
+        
+    }
+    
+      function runGreedy(){
+          if(simulationRunning){
+            // window.alert('Simulation already running. Please wait or end the Simulation.');
+            return;
+          }
+
+          simulationRunning = true;
+
+          const coinsInput = document.getElementById('coins').value;
+          const amount = parseInt(document.getElementById('amount').value)
+          let coins = coinsInput.split(' ').map(coin => parseInt(coin));
+          // console.log(coins);
+          // const amount = 9
+          // let coins = Array([1,4,5,7])
+          
+          
+          // const coinsSorted = coins.sort((a,b)=>b-a);
+          
+          
+          const { result , coinSet } = coinChangeGreedy( coins, amount );
+          // console.log( result );
+          // console.log( coinSet );
+
+          displaySimulationGreedy( amount, coins, result ,coinSet );
+
+        }
+
+      function coinChangeGreedy( coins , amount ){
+        let coinSet = [];
+        let i = coins.length - 1;
+        while(amount != 0 ){
+          if(amount >= coins[i]){
+            amount-=coins[i];
+            coinSet.push(coins[i]);
+          }
+          else i--;
+        }
+        return { result : amount != 0 ?  -1 : coinSet.length , coinSet};
+      }
+      
+      function displaySimulationGreedy( amount, coins, result, coinSet ){
+        
+        let step = 0;
+        
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = 'Coins Given';
+
+        const explainDiv = document.getElementById('explain');
+        explainDiv.innerHTML = `Sum = ${amount}`;
+        
+        const tableContainer = document.getElementById('table-container');
+        tableContainer.innerHTML = '';
+
+        const table = document.createElement('table');
+
+        const coinsSorted = coins.slice().sort((a,b)=>b-a);
+        // console.log(coins);
+        // console.log(coinsSorted);
+        if (result === -1) {
+          outputDiv.innerHTML = 'No valid combination.';
+          return;
+        }
+        else{
+          
+          table, step = displayUnsorted(coins, table, tableContainer, step);
+          
+
+          
+          // const coinsSorted = coins.slice().sort((a,b)=>b-a);
+          
+          
+          setTimeout(()=>{
+            table.deleteRow(0);
+            const sorted = table.insertRow();
+            for(coin of coinsSorted){
+              const cellElement = sorted.insertCell();
+              cellElement.textContent = coin;
+            }
+            outputDiv.innerHTML = 'Sort from highest to lowest'
+            tableContainer.innerHTML = '';
+            tableContainer.appendChild(table);
+          },step*1000);
+          step+=1;
+          
+        }  
+
+        
+        let i = 0;
+        const interval = setInterval(()=>{
+          displayRow( tableContainer, coinsSorted, i, table, amount, coinSet);
+          if( amount === 0){
+            outputDiv.innerHTML = `Therefore, ${result} coins have been used.`;
+            explainDiv.innerHTML = `Combination of coins is (${coinSet}).`;
+            console.log('Greedy simulation complete.');             
+            clearInterval(interval);
+            simulationRunning = false;
+          }
+          else{
+            if(amount >= coinsSorted[i]){
+              outputDiv.innerHTML = `Take coin ${coinsSorted[i]}.`;
+              explainDiv.innerHTML = `Sum left = ${amount - coinsSorted[i]}`;
+              amount-=coinsSorted[i];
+            }
+            else{
+              i++;
+              outputDiv.innerHTML = `Denomination greater than sum. Move to next`;
+              explainDiv.innerHTML = `Sum left = ${amount}`;
+            }
+          }
+        },step*1000)
+        return step;
+      }
+
+      function displayUnsorted(coins, table, container, step){
+        const unsorted = table.insertRow();
+          for(coin of coins){
+            const cellElement = unsorted.insertCell();
+            cellElement.textContent = coin;
+            console.log(coins);
+          }
+          
+          setTimeout(()=>{
+            container.appendChild(table);
+          },step*1000);
+          step+=1;
+          
+          
+          return table, step;
+      }
+
+      function displayRow( tableContainer, coinsSorted, i, table, amount, coinSet){
+        const row = table.insertRow();
+        table.deleteRow(0);
+        for(let j = 0 ; j < coinsSorted.length ; j++ ){
+            const cellElement = row.insertCell();
+            cellElement.textContent = coinsSorted[j];
+            if (i===j) cellElement.style.borderColor = '#f20000';
+            if (amount===0 && coinSet.includes(coinsSorted[j])) cellElement.style.borderColor = '#f20000';
+          }
+        tableContainer.innerHTML = '';
+        tableContainer.appendChild(table);
+      }
+
+      
+</script>
+</html>
